@@ -1,0 +1,169 @@
+#include <Wire.h>
+
+
+// Dirección I2C del acelerómetro ADXL345
+
+const int ADXL345_ADDRESS = 0x53;
+
+
+// Direcciones de los registros
+
+const byte POWER_CTL = 0x2D;
+
+const byte DATA_FORMAT = 0x31;
+
+const byte DATAX0 = 0x32;
+
+
+// Offset para la calibración
+
+int offsetX = 0;
+
+int offsetY = 0;
+
+int offsetZ = 0;
+
+
+void setup() {
+
+  Serial.begin(9600);
+
+  Wire.begin();
+
+
+  // Configuración del acelerómetro
+
+  writeTo(POWER_CTL, 0x08);   // Activar modo de medición
+
+  writeTo(DATA_FORMAT, 0x08); // ±2g de rango de medición
+
+
+  // Calibración
+
+  calibrate();
+
+}
+
+
+void loop() {
+
+  // Leer los valores brutos de los ejes
+
+  int x, y, z;
+
+  readAccel(x, y, z);
+
+
+  // Aplicar calibración
+
+  x -= offsetX;
+
+  y -= offsetY;
+
+  z -= offsetZ;
+
+
+  // Mostrar los valores en el Serial Plotter
+
+  Serial.print(x);
+
+  Serial.print(" ");
+
+  Serial.print(y);
+
+  Serial.print(" ");
+
+  Serial.println(z);
+
+
+  delay(500);
+
+}
+
+
+void readAccel(int& x, int& y, int& z) {
+
+  byte buff[6];
+
+  readFrom(DATAX0, 6, buff);
+
+
+  // Convertir los datos brutos a valores de 10 bits
+
+  x = (((int)buff[1]) << 8) | buff[0];
+
+  y = (((int)buff[3]) << 8) | buff[2];
+
+  z = (((int)buff[5]) << 8) | buff[4];
+
+}
+
+
+void calibrate() {
+
+  const int samples = 100;
+
+  int sumX = 0, sumY = 0, sumZ = 0;
+
+
+  // Tomar muestras para la calibración
+
+  for (int i = 0; i < samples; i++) {
+
+        int x, y, z;
+
+        readAccel(x, y, z);
+
+        sumX += x;
+
+        sumY += y;
+
+        sumZ += z;
+
+        delay(10);
+
+  }
+
+
+  // Calcular el promedio de las muestras
+
+  offsetX = sumX / samples;
+
+  offsetY = sumY / samples;
+
+  offsetZ = sumZ / samples;
+
+}
+
+
+void writeTo(byte regAddress, byte value) {
+
+  Wire.beginTransmission(ADXL345_ADDRESS);
+
+  Wire.write(regAddress);
+
+  Wire.write(value);
+
+  Wire.endTransmission();
+
+}
+
+
+void readFrom(byte regAddress, int numBytes, byte* buff) {
+
+  Wire.beginTransmission(ADXL345_ADDRESS);
+
+  Wire.write(regAddress);
+
+  Wire.endTransmission();
+
+
+  Wire.requestFrom(ADXL345_ADDRESS, numBytes);
+
+  for (int i = 0; i < numBytes; i++) {
+
+        buff[i] = Wire.read();
+
+  }
+
+}

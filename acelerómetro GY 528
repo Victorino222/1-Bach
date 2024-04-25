@@ -1,0 +1,38 @@
+//necesitas importar la librería MPU6050
+#include <Wire.h>
+#include <MPU6050.h>
+
+MPU6050 mpu;
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  
+  mpu.initialize();
+  
+  // Calibración opcional
+  mpu.calibrateAccel();
+  mpu.calibrateGyro();
+  mpu.setThreshold(3);
+}
+void loop() {
+  // Leer los datos del acelerómetro
+  int16_t ax, ay, az;
+  mpu.getAcceleration(&ax, &ay, &az);
+  
+  // Convertir a unidades de gravedad (g)
+  float accX = ax / 16384.0;
+  float accY = ay / 16384.0;
+  float accZ = az / 16384.0;
+  
+  // Mostrar los datos en el puerto serie
+  Serial.print("AccX: ");
+  Serial.print(accX);
+  Serial.print("g, AccY: ");
+  Serial.print(accY);
+  Serial.print("g, AccZ: ");
+  Serial.print(accZ);
+  Serial.println("g");
+  
+  delay(100);
+}

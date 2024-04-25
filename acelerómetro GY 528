@@ -1,4 +1,4 @@
-//necesitas importar la librería MPU6050
+//Necesitas importar la librería MPU6050
 #include <Wire.h>
 #include <MPU6050.h>
 
